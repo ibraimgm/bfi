@@ -22,7 +22,7 @@
     {
       "label": "test",
       "type": "shell",
-      "command": "go test -v ./...",
+      "command": "go test ./...",
       "problemMatcher": [
         "$go"
       ]
