@@ -14,8 +14,6 @@ type expectedCommand struct {
 }
 
 func TestCompile(t *testing.T) {
-	t.Skip("Not implemented yet!")
-
 	testCases := []struct {
 		source   string
 		commands []expectedCommand
@@ -38,7 +36,7 @@ func TestCompile(t *testing.T) {
 				{cmdType: parser.CmdInc, cmdQty: 1},
 				{cmdType: parser.CmdMoveLeft, cmdQty: 4},
 				{cmdType: parser.CmdDec, cmdQty: 1},
-				{cmdQty: parser.CmdReturn},
+				{cmdType: parser.CmdReturn},
 				{cmdType: parser.CmdMoveRight, cmdQty: 1},
 				{cmdType: parser.CmdInc, cmdQty: 1},
 				{cmdType: parser.CmdMoveRight, cmdQty: 1},
