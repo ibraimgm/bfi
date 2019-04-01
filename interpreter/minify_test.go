@@ -47,6 +47,42 @@ func TestMinify(t *testing.T) {
 		32 >>+.                    Add 1 to Cell #5 gives us an exclamation point
 		33 >++.                    And finally a newline from Cell #6`,
 		expected: `++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.`,
+	}, {
+		source: `
+		>>      Move the pointer to cell2
+		[-]     Set cell2 to 0
+		<<      Move the pointer back to cell0
+		[       While cell0 is not 0
+			-       Subtract 1 from cell0
+			>>      Move the pointer to cell2
+			+       Add 1 to cell2
+			<<      Move the pointer back to cell0
+		]       End while`,
+		expected: `>>[-]<<[->>+<<]`,
+	}, {
+		source: `
+		Calculate the value 256 and test if it's zero
+		If the interpreter errors on overflow this is where it'll happen
+		++++++++[>++++++++<-]>[<++++>-]
+		+<[>-<
+				Not zero so multiply by 256 again to get 65536
+				[>++++<-]>[<++++++++>-]<[>++++++++<-]
+				+>[>
+						# Print "32"
+						++++++++++[>+++++<-]>+.-.[-]<
+				<[-]<->] <[>>
+						# Print "16"
+						+++++++[>+++++++<-]>.+++++.[-]<
+		<<-]] >[>
+				# Print "8"
+				++++++++[>+++++++<-]>.[-]<
+		<-]<
+		# Print " bit cells\n"
+		+++++++++++[>+++>+++++++++>+++++++++>+<<<<-]>-.>-.+++++++.+++++++++++.<.
+		>>.++.+++++++..<-.>>-
+		Clean up used cells.
+		[[-]<]`,
+		expected: `++++++++[>++++++++<-]>[<++++>-]+<[>-<[>++++<-]>[<++++++++>-]<[>++++++++<-]+>[>++++++++++[>+++++<-]>+.-.[-]<<[-]<->]<[>>+++++++[>+++++++<-]>.+++++.[-]<<<-]]>[>++++++++[>+++++++<-]>.[-]<<-]<+++++++++++[>+++>+++++++++>+++++++++>+<<<<-]>-.>-.+++++++.+++++++++++.<.>>.++.+++++++..<-.>>-.[[-]<]`,
 	}}
 
 	for i, v := range testCases {

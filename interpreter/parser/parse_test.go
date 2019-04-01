@@ -82,6 +82,22 @@ func TestCompile(t *testing.T) {
 				{cmdType: parser.CmdOutput},
 			},
 		},
+		{
+			source: `>>[-]<<[->>+<<]`,
+			commands: []expectedCommand{
+				{cmdType: parser.CmdMoveRight, cmdQty: 2},
+				{cmdType: parser.CmdJump},
+				{cmdType: parser.CmdDec, cmdQty: 1},
+				{cmdType: parser.CmdReturn},
+				{cmdType: parser.CmdMoveLeft, cmdQty: 2},
+				{cmdType: parser.CmdJump},
+				{cmdType: parser.CmdDec, cmdQty: 1},
+				{cmdType: parser.CmdMoveRight, cmdQty: 2},
+				{cmdType: parser.CmdInc, cmdQty: 1},
+				{cmdType: parser.CmdMoveLeft, cmdQty: 2},
+				{cmdType: parser.CmdReturn},
+			},
+		},
 	}
 
 	for i, test := range testCases {
