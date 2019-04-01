@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ibraimgm/bfi/interpreter/parser"
+	"github.com/ibraimgm/bfi/interpreter/token"
 )
 
 func TestExtractCommand(t *testing.T) {
@@ -32,4 +33,29 @@ func TestExtractCommand(t *testing.T) {
 		}
 	}
 
+}
+
+func TestEncodeCommand(t *testing.T) {
+	testCases := []struct {
+		cmd      rune
+		qty      byte
+		expected byte
+	}{
+		{cmd: token.MoveRight, qty: 63, expected: 63},
+		{cmd: token.MoveLeft, qty: 63, expected: 127},
+		{cmd: token.Inc, qty: 4, expected: 132},
+		{cmd: token.Dec, qty: 3, expected: 195},
+		{cmd: token.Output, qty: 7, expected: 0},
+		{cmd: token.Input, qty: 2, expected: 64},
+		{cmd: token.Jump, qty: 6, expected: 128},
+		{cmd: token.Return, qty: 1, expected: 192},
+	}
+
+	for i, test := range testCases {
+		encoded := parser.EncodeCommand(test.cmd, test.qty)
+
+		if encoded != test.expected {
+			t.Errorf("Case %v, token %v, received \"%v\", expected \"%v\"", i, test.cmd, encoded, test.expected)
+		}
+	}
 }
