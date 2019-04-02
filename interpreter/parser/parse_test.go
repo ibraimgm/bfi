@@ -98,12 +98,23 @@ func TestCompile(t *testing.T) {
 				{cmdType: parser.CmdReturn},
 			},
 		},
+		{
+			source: `+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++`,
+			commands: []expectedCommand{
+				{cmdType: parser.CmdInc, cmdQty: 63},
+				{cmdType: parser.CmdInc, cmdQty: 2},
+			},
+		},
 	}
 
 	for i, test := range testCases {
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(parser.Parse(strings.NewReader(test.source)))
 		compiled := buf.Bytes()
+
+		if len(compiled) != len(test.commands) {
+			t.Errorf("Case %v, mismatched size. Received \"%v\", expected \"%v\"", i, len(compiled), len(test.commands))
+		}
 
 		for j, value := range compiled {
 			cmd, qty := parser.ExtractCommand(value)

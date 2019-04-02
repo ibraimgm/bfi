@@ -27,6 +27,17 @@ func (p *parseReader) Read(buffer []byte) (int, error) {
 			currToken := rune(b)
 
 			if currToken == lastCmd {
+				if lastQty == 63 {
+					buffer[n] = EncodeCommand(lastCmd, lastQty)
+					n++
+					lastQty = 0
+				}
+
+				if n == maxSize {
+					err = p.r.UnreadByte()
+					return n, err
+				}
+
 				lastQty++
 			} else {
 				if lastCmd != emptyToken {
@@ -58,7 +69,16 @@ func (p *parseReader) Read(buffer []byte) (int, error) {
 			}
 		}
 
-		if n >= maxSize || err != nil {
+		if n >= maxSize {
+			return n, err
+		}
+
+		if err != nil {
+			if lastQty > 0 {
+				buffer[n] = EncodeCommand(lastCmd, lastQty)
+				n++
+			}
+
 			return n, err
 		}
 	}
