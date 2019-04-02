@@ -129,3 +129,78 @@ func TestCompile(t *testing.T) {
 		}
 	}
 }
+
+func TestCompileWithBuffer(t *testing.T) {
+	testCases := []struct {
+		source   string
+		commands []expectedCommand
+	}{
+		{
+			source: `+++-+++-+`,
+			commands: []expectedCommand{
+				{cmdType: parser.CmdInc, cmdQty: 3},
+				{cmdType: parser.CmdDec, cmdQty: 1},
+				{cmdType: parser.CmdInc, cmdQty: 3},
+				{cmdType: parser.CmdDec, cmdQty: 1},
+				{cmdType: parser.CmdInc, cmdQty: 1},
+			},
+		},
+		{
+			source: `...,,+++,`,
+			commands: []expectedCommand{
+				{cmdType: parser.CmdOutput},
+				{cmdType: parser.CmdOutput},
+				{cmdType: parser.CmdOutput},
+				{cmdType: parser.CmdInput},
+				{cmdType: parser.CmdInput},
+				{cmdType: parser.CmdInc, cmdQty: 3},
+				{cmdType: parser.CmdInput},
+			},
+		},
+		{
+			source: `..+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++`,
+			commands: []expectedCommand{
+				{cmdType: parser.CmdOutput},
+				{cmdType: parser.CmdOutput},
+				{cmdType: parser.CmdInc, cmdQty: 63},
+				{cmdType: parser.CmdInc, cmdQty: 2},
+			},
+		},
+	}
+
+	for i, test := range testCases {
+		buffer := make([]byte, 3)
+		compiled := make([]byte, len(test.commands))
+		reader := parser.Parse(strings.NewReader(test.source))
+		idx := 0
+
+		for {
+			n, err := reader.Read(buffer)
+
+			for j := 0; j < n; j++ {
+				compiled[idx] = buffer[j]
+				idx++
+			}
+
+			if err != nil {
+				break
+			}
+		}
+
+		if len(compiled) != len(test.commands) {
+			t.Errorf("Case %v, mismatched size. Received \"%v\", expected \"%v\"", i, len(compiled), len(test.commands))
+		}
+
+		for j, value := range compiled {
+			cmd, qty := parser.ExtractCommand(value)
+
+			if cmd != test.commands[j].cmdType {
+				t.Errorf("Case %v, byte %v, command mismatch. Received \"%v\", expected \"%v\"", i, j, cmd, test.commands[j].cmdType)
+			}
+
+			if qty != test.commands[j].cmdQty {
+				t.Errorf("Case %v, byte %v, qty mismatch. Received \"%v\", expected \"%v\"", i, j, qty, test.commands[j].cmdQty)
+			}
+		}
+	}
+}
