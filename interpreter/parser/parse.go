@@ -8,49 +8,110 @@ import (
 	"github.com/ibraimgm/bfi/interpreter/token"
 )
 
+const emptyToken = '\x00'
+
+type parseState struct {
+	reader  *bufio.Reader
+	buffer  []byte
+	maxSize int
+	current int
+	lastCmd rune
+	lastQty byte
+}
+
+func initState(buffer []byte, reader *bufio.Reader) *parseState {
+	return &parseState{reader, buffer, len(buffer), 0, emptyToken, 0}
+}
+
+func (s *parseState) read() (rune, error) {
+	b, err := s.reader.ReadByte()
+	return rune(b), err
+}
+
+func (s *parseState) encodeCombined() {
+	s.buffer[s.current] = EncodeCommand(s.lastCmd, s.lastQty)
+	s.current++
+	s.lastQty = 0
+}
+
+func (s *parseState) undoWhenOverflow() (int, bool, error) {
+	if s.current == s.maxSize {
+		err := s.reader.UnreadByte()
+		return s.current, true, err
+	}
+
+	return s.current, false, nil
+}
+
+func (s *parseState) combineCommand() (int, bool, error) {
+	if s.lastQty == 63 {
+		s.encodeCombined()
+	}
+
+	read, undo, err := s.undoWhenOverflow()
+
+	if !undo {
+		s.lastQty++
+	}
+
+	return read, undo, err
+}
+
+func (s *parseState) commitPending() (int, bool, error) {
+	if s.hasPendingCommand() {
+		s.encodeCombined()
+		return s.undoWhenOverflow()
+	}
+
+	return s.current, false, nil
+}
+
+func (s *parseState) shouldCombine(currToken rune) bool {
+	return currToken == s.lastCmd
+}
+
+func (s *parseState) hasPendingCommand() bool {
+	return s.lastCmd != emptyToken && s.lastQty > 0
+}
+
+func (s *parseState) initCombined(currToken rune) {
+	s.lastCmd = currToken
+	s.lastQty = 1
+}
+
+func (s *parseState) encode(currToken rune) {
+	s.buffer[s.current] = EncodeCommand(currToken, 0)
+	s.lastCmd = emptyToken
+	s.current++
+}
+
 type parseReader struct {
 	r *bufio.Reader
 }
 
-const emptyToken = '\x00'
-
 func (p *parseReader) Read(buffer []byte) (int, error) {
-	n := 0
-	maxSize := len(buffer)
-	lastCmd := emptyToken
-	lastQty := byte(0)
+	st := initState(buffer, p.r)
 
 	for {
-		b, err := p.r.ReadByte()
+		//check if we can read a new token
+		if currToken, err := st.read(); err == nil {
 
-		if err == nil {
-			currToken := rune(b)
-
-			if currToken == lastCmd {
-				if lastQty == 63 {
-					buffer[n] = EncodeCommand(lastCmd, lastQty)
-					n++
-					lastQty = 0
+			// if possible combine the read token, until the 6-bit limit
+			// might undo the read if the buffer overflows
+			if st.shouldCombine(currToken) {
+				if read, undo, err := st.combineCommand(); undo {
+					return read, err
 				}
-
-				if n == maxSize {
-					err = p.r.UnreadByte()
-					return n, err
-				}
-
-				lastQty++
 			} else {
-				if lastCmd != emptyToken {
-					buffer[n] = EncodeCommand(lastCmd, lastQty)
-					n++
-					lastQty = 0
-
-					if n == maxSize {
-						err = p.r.UnreadByte()
-						return n, err
-					}
+				// if it is not combinable, commit the last pending combinable command.
+				// this might undo the read if the buffer overflows
+				if read, undo, err := st.commitPending(); undo {
+					return read, err
 				}
 
+				// actual processing of a new (or non-combinable) token
+				// this might either start a new combination or directly encode the
+				// token, if it is not combinable
 				switch currToken {
 				case token.MoveRight:
 					fallthrough
@@ -59,27 +120,24 @@ func (p *parseReader) Read(buffer []byte) (int, error) {
 				case token.Inc:
 					fallthrough
 				case token.Dec:
-					lastCmd = currToken
-					lastQty = 1
+					st.initCombined(currToken)
 				default:
-					buffer[n] = EncodeCommand(currToken, 0)
-					lastCmd = emptyToken
-					n++
+					st.encode(currToken)
 				}
 			}
-		}
-
-		if n >= maxSize {
-			return n, err
-		}
-
-		if err != nil {
-			if lastQty > 0 {
-				buffer[n] = EncodeCommand(lastCmd, lastQty)
-				n++
+		} else {
+			// in case of error or EOF, finish any remaining pending command
+			// before exiting
+			if st.hasPendingCommand() {
+				st.encodeCombined()
 			}
 
-			return n, err
+			return st.current, err
+		}
+
+		// check for a filled buffer
+		if st.current >= st.maxSize {
+			return st.current, nil
 		}
 	}
 }
