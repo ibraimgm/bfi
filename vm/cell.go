@@ -28,10 +28,12 @@ type Cell interface {
 	Dec()
 	Subtract(value byte)
 	Zero()
+	IsZero() bool
 	ToUint8() uint8
 	ToUint16() uint16
 	ToUint32() uint32
 	ToUint64() uint64
+	Clone() Cell
 }
 
 type cellImpl struct {
@@ -85,6 +87,21 @@ func (c *cellImpl) Zero() {
 	}
 }
 
+func (c *cellImpl) IsZero() bool {
+	switch c.inner.(type) {
+	case uint8:
+		return c.inner.(uint8) == 0
+	case uint16:
+		return c.inner.(uint16) == 0
+	case uint32:
+		return c.inner.(uint32) == 0
+	case uint64:
+		return c.inner.(uint64) == 0
+	}
+
+	return false
+}
+
 func (c *cellImpl) String() string {
 	return fmt.Sprintf("%v", c.inner)
 }
@@ -112,6 +129,11 @@ func (c *cellImpl) ToUint64() uint64 {
 	default:
 		return c.inner.(uint64)
 	}
+}
+
+func (c *cellImpl) Clone() Cell {
+	other := *c
+	return &other
 }
 
 func newCell(t CellType) (Cell, error) {

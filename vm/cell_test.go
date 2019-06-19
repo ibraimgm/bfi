@@ -19,6 +19,10 @@ func TestCellValues(t *testing.T) {
 			t.Errorf("Case %v, expected cell value to be %v, received \"%v\"", n, expected, c.ToUint8())
 		}
 
+		if expected == 0 && !c.IsZero() {
+			t.Errorf("Case %v, IsZero should be \"true\".", n)
+		}
+
 		se := fmt.Sprintf("%d", expected)
 
 		if c.String() != se {
