@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -15,6 +16,21 @@ const (
 	Cell32
 	Cell64
 )
+
+func ParseCellType(value int) (CellType, error) {
+	switch value {
+	case 8:
+		return Cell8, nil
+	case 16:
+		return Cell16, nil
+	case 32:
+		return Cell32, nil
+	case 64:
+		return Cell64, nil
+	default:
+		return 0, errors.New(fmt.Sprintf("invalid cell type: %v", value))
+	}
+}
 
 // Cell represents a cell in the tape. A cell might have 8, 16, 32 or 64
 // bits (this is defined in the tape creation).

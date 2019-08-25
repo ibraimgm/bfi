@@ -80,7 +80,7 @@ func TestCellCast(t *testing.T) {
 }
 
 func TestNewCellError(t *testing.T) {
-	c, err := newCell(CellType(-1))
+	c, err := newCell(CellType(int(-1)))
 
 	if c != nil {
 		t.Errorf("Should have returned a nil cell")
