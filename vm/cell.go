@@ -1,34 +1,17 @@
 package vm
 
 import (
-	"errors"
 	"fmt"
 )
 
-// CellType define the type of the cell used on the tape
-type CellType int
-
-// List the available cell types. They differ only in size, and the
-// original brainf*ck assumes a 8 bit cell (Cell8)
-const (
-	Cell8 CellType = iota
-	Cell16
-	Cell32
-	Cell64
-)
-
-func ParseCellType(value int) (CellType, error) {
-	switch value {
-	case 8:
-		return Cell8, nil
-	case 16:
-		return Cell16, nil
-	case 32:
-		return Cell32, nil
-	case 64:
-		return Cell64, nil
+// CheckCellSize checks if the supplied size is supported
+// by the interpreter
+func CheckCellSize(size int) error {
+	switch size {
+	case 8, 16, 32, 64:
+		return nil
 	default:
-		return 0, errors.New(fmt.Sprintf("invalid cell type: %v", value))
+		return InvalidCellSizeError(size)
 	}
 }
 
@@ -152,17 +135,17 @@ func (c *cellImpl) Clone() Cell {
 	return &other
 }
 
-func newCell(t CellType) (Cell, error) {
-	switch t {
-	case Cell8:
+func newCell(size int) (Cell, error) {
+	switch size {
+	case 8:
 		return &cellImpl{uint8(0)}, nil
-	case Cell16:
+	case 16:
 		return &cellImpl{uint16(0)}, nil
-	case Cell32:
+	case 32:
 		return &cellImpl{uint32(0)}, nil
-	case Cell64:
+	case 64:
 		return &cellImpl{uint64(0)}, nil
 	default:
-		return nil, InvalidCellTypeError(t)
+		return nil, InvalidCellSizeError(size)
 	}
 }

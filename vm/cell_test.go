@@ -9,10 +9,10 @@ import (
 
 func TestCellValues(t *testing.T) {
 	testCases := make([]Cell, 4)
-	testCases[0], _ = newCell(Cell8)
-	testCases[1], _ = newCell(Cell16)
-	testCases[2], _ = newCell(Cell32)
-	testCases[3], _ = newCell(Cell64)
+	testCases[0], _ = newCell(8)
+	testCases[1], _ = newCell(16)
+	testCases[2], _ = newCell(32)
+	testCases[3], _ = newCell(64)
 
 	checkValue := func(n int, expected uint8, c Cell) {
 		if c.ToUint8() != expected {
@@ -80,7 +80,7 @@ func TestCellCast(t *testing.T) {
 }
 
 func TestNewCellError(t *testing.T) {
-	c, err := newCell(CellType(int(-1)))
+	c, err := newCell(-1)
 
 	if c != nil {
 		t.Errorf("Should have returned a nil cell")
@@ -90,8 +90,8 @@ func TestNewCellError(t *testing.T) {
 		t.Errorf("The error should not be nil")
 	}
 
-	if e2, ok := err.(InvalidCellTypeError); !ok {
-		t.Errorf("Wrong error type. Expected \"InvalidCellTypeError\", received \"%T\"", e2)
+	if e2, ok := err.(InvalidCellSizeError); !ok {
+		t.Errorf("Wrong error type. Expected \"InvalidCellSizeError\", received \"%T\"", e2)
 	} else if !strings.Contains(e2.Error(), "-1") {
 		t.Errorf("Wrong error message. Received \"%v\"", e2.Error())
 	}

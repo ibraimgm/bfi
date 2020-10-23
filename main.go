@@ -11,7 +11,7 @@ import (
 
 func main() {
 	tsFlag := getopt.UintLong("tapesize", 't', 3000, "sets the tape size")
-	csFlag := getopt.UintLong("cellsize", 'c', 8, "sets the cell size")
+	csFlag := getopt.IntLong("cellsize", 'c', 8, "sets the cell size")
 	helpFlag := getopt.BoolLong("help", 'h', "prints this help message")
 
 	if err := getopt.Getopt(nil); err != nil {
@@ -25,8 +25,7 @@ func main() {
 		return
 	}
 
-	celltype, err := vm.ParseCellType(int(*csFlag))
-	if err != nil {
+	if err := vm.CheckCellSize(*csFlag); err != nil {
 		fmt.Printf("%v\n\n", err)
 		getopt.Usage()
 		os.Exit(1)
@@ -39,7 +38,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	bfvm, err := vm.WithSpecs(celltype, int(*tsFlag))
+	bfvm, err := vm.WithSpecs(*csFlag, int(*tsFlag))
 	if err != nil {
 		fmt.Printf("error creating vm: %v", err)
 	}
